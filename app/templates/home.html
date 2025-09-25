@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-center">Welcome to Guess The Word 🎮</h1>
+<p class="text-center">A simple Flask game with login, registration, and word guessing.</p>
+
+{% if session.get('user_id') %}
+<div class="text-center">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+</div>
+{% else %}
+<div class="text-center">
+    <a href="{{ url_for('main.login') }}" class="btn btn-success">Login</a>
+    <a href="{{ url_for('main.register') }}" class="btn btn-info">Register</a>
+</div>
+{% endif %}
+{% endblock %}
