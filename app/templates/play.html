@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .letter-box {
+        display: inline-block;
+        border: 2px solid #ccc;
+        width: 60px;
+        height: 60px;
+        text-align: center;
+        line-height: 55px;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 4px;
+        text-transform: uppercase;
+    }
+
+    .game-row {
+        display: flex;
+        justify-content: center;
+    }
+
+    .green {
+        background-color: #6aaa64;
+        color: white;
+        border-color: #6aaa64;
+    }
+
+    .orange {
+        background-color: #c9b458;
+        color: white;
+        border-color: #c9b458;
+    }
+
+    .grey {
+        background-color: #787c7e;
+        color: white;
+        border-color: #787c7e;
+    }
+</style>
+
+<div class="text-center">
+    <h2 class="mb-4">Guess the 5-Letter Word!</h2>
+
+    <div id="game-board" class="mb-4">
+        {% for guess in history %}
+        <div class="game-row">
+            {% for letter_info in guess %}
+            <div class="letter-box {{ letter_info.color }}">{{ letter_info.letter }}</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if message %}
+    <div class="alert alert-info mt-4">
+        <h4>{{ message }}</h4>
+        <a href="{{ url_for('main.play') }}" class="btn btn-primary mt-2">Play Again</a>
+    </div>
+    {% endif %}
+
+    {% if not game_over %}
+    <p>You have {{ 5 - history|length }} guesses remaining.</p>
+    <form method="POST" class="d-flex justify-content-center">
+        <input type="text" name="guess" class="form-control w-25" maxlength="5" minlength="5" pattern="[A-Za-z]{5}"
+            title="Enter a 5-letter word" required autofocus>
+        <button type="submit" class="btn btn-success ms-2">Guess</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
