@@ -1,57 +1,68 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app import db
-from app.models import User, Word, Guess
+from app.models import User, Word, Guess, Game
+from datetime import datetime
+import random
 import re
-from collections import Counter
-import random 
+from sqlalchemy import func, case
 
 main = Blueprint("main", __name__)
 
-# Home route
+# Home Route
 @main.route("/")
 def home():
     return render_template("home.html")
 
-# Register route
+
+# Registration Route
 @main.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        username = request.form["username"]
-        email = request.form["email"]
+        username = request.form["username"].strip()
+        email = request.form["email"].strip()
         password = request.form["password"]
 
+        # validations
         if len(username) < 5:
             flash("Username must be at least 5 characters long.", "danger")
             return redirect(url_for("main.register"))
+
         if not (re.search('[a-z]', username) and re.search('[A-Z]', username)):
             flash("Username must contain both uppercase and lowercase letters.", "danger")
             return redirect(url_for("main.register"))
+
         if len(password) < 5:
             flash("Password must be at least 5 characters long.", "danger")
             return redirect(url_for("main.register"))
+
         if not (re.search('[a-zA-Z]', password) and re.search('[0-9]', password) and re.search('[$%*@]', password)):
             flash("Password must contain a letter, a number, and one of these special characters: $, %, *, @", "danger")
             return redirect(url_for("main.register"))
 
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
+        # Check existing user
+        if User.query.filter_by(email=email).first():
             flash("Email already registered. Please log in.", "danger")
             return redirect(url_for("main.login"))
 
+        # Create new user
         new_user = User(username=username, email=email)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
+
         flash("Registration successful! Please log in.", "success")
         return redirect(url_for("main.login"))
+
     return render_template("register.html")
 
-# Login route
+
+# Login Route
 @main.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
+        email = request.form["email"].strip()
         password = request.form["password"]
+
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
             session["user_id"] = user.id
@@ -60,7 +71,9 @@ def login():
             return redirect(url_for("main.dashboard"))
         else:
             flash("Invalid credentials. Please try again.", "danger")
+
     return render_template("login.html")
+
 
 # Logout Route
 @main.route("/logout")
@@ -69,89 +82,153 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect(url_for("main.login"))
 
+
+# Dashboard Route
 @main.route("/dashboard")
 def dashboard():
     if "user_id" not in session:
         flash("Please log in to access the dashboard.", "warning")
         return redirect(url_for("main.login"))
+
     return render_template("dashboard.html", username=session.get("username"))
 
 
-@main.route("/add-words")
-def add_words():
-    words_to_add = [
-        "APPLE", "HOUSE", "TOWER", "FLASK", "PYTHON", "GRACE", "STYLE", "BEACH", 
-        "CHAIR", "TABLE", "MUSIC", "WATER", "HEART", "LIGHT", "WORLD", "HAPPY", 
-        "SMILE", "QUIET", "DREAM", "PLANT"
-    ]
-    for w in words_to_add:
-        # Check if the word already exists to avoid duplicates
-        if not Word.query.filter_by(word=w).first():
-            db.session.add(Word(word=w))
-    db.session.commit()
-    flash(f"Added {len(words_to_add)} words to the database!", "success")
-    return redirect(url_for('main.home'))
-
-def check_guess(guess, secret_word):
-    """Checks a guess and returns feedback with colors."""
-    feedback = []
-    secret_counts = Counter(secret_word)
-    
-    for i in range(5):
-        if guess[i] == secret_word[i]:
-            feedback.append({'letter': guess[i], 'color': 'green'})
-            secret_counts[guess[i]] -= 1
-        else:
-            feedback.append({'letter': guess[i], 'color': 'grey'})
-
-    for i in range(5):
-        if feedback[i]['color'] != 'green':
-            if guess[i] in secret_word and secret_counts[guess[i]] > 0:
-                feedback[i]['color'] = 'orange'
-                secret_counts[guess[i]] -= 1
-    return feedback
-
-# Play Route
-@main.route("/play", methods=['GET', 'POST'])
+# The Main Game Logic
+@main.route("/play", methods=["GET", "POST"])
 def play():
     if "user_id" not in session:
+        flash("Please log in to play.", "warning")
         return redirect(url_for("main.login"))
 
-    if 'word_id' not in session:
-        all_words = Word.query.all()
-        if not all_words:
-            flash("No words in the database to play with! Visit /add-words first.", "warning")
-            return redirect(url_for('main.dashboard'))
-        random_word = random.choice(all_words)
-        session['word_id'] = random_word.id
-        session['guesses'] = [] 
+    if "target_word" not in session:
+        words = Word.query.all()
+        if not words:
+            flash("No words available. Please add words first.", "danger")
+            return redirect(url_for("main.dashboard"))
+        target_word = random.choice(words).word.upper()
+        session["target_word"] = target_word
+        session["attempts"] = 0
+        session["history"] = []
 
-    secret_word_obj = Word.query.get(session['word_id'])
-    secret_word = secret_word_obj.word
-    
-    history = session.get('guesses', [])
+    history = session["history"]
+    target = session["target_word"]
     game_over = False
-    message = ""
+    message = None
 
-    if request.method == 'POST':
-        guess = request.form.get('guess', '').upper() 
+    if request.method == "POST" and not game_over:
+        guess = request.form.get("guess", "").upper().strip()
 
         if len(guess) != 5 or not guess.isalpha():
-            flash("Your guess must be a 5-letter word.", "danger")
-        else:
-            feedback = check_guess(guess, secret_word)
-            history.append(feedback)
-            session['guesses'] = history
-            new_db_guess = Guess(guess_word=guess, user_id=session['user_id'], word_id=session['word_id'])
-            db.session.add(new_db_guess)
+            flash("Invalid guess. Please enter a 5-letter word.", "danger")
+            return redirect(url_for("main.play"))
+
+        session["attempts"] += 1
+
+        feedback = []
+        for i in range(5):
+            if guess[i] == target[i]:
+                feedback.append({"letter": guess[i], "color": "green"})
+            elif guess[i] in target:
+                feedback.append({"letter": guess[i], "color": "orange"})
+            else:
+                feedback.append({"letter": guess[i], "color": "grey"})
+
+        history.append(feedback)
+        session["history"] = history
+
+        # Win Condition
+        if guess == target:
+            game_over = True
+            message = f" CONGRATULATIONS ! You guessed the word '{target}' in {session['attempts']} attempts!"
+            new_game = Game(
+                user_id=session["user_id"],
+                word=target,
+                attempts=session["attempts"],
+                won=True,
+                played_at=datetime.utcnow()
+            )
+            db.session.add(new_game)
             db.session.commit()
-            if guess == secret_word:
-                message = f"You won! The word was {secret_word}."
-                game_over = True
-                session.pop('word_id') 
-            elif len(history) >= 5:
-                message = f"Game over! The secret word was {secret_word}."
-                game_over = True
-                session.pop('word_id')
-    
-    return render_template("play.html", history=history, game_over=game_over, message=message)
+            session.pop("target_word", None)
+            session.pop("attempts", None)
+            session.pop("history", None)
+
+        # Lose Condition
+        elif session["attempts"] >= 6:
+            game_over = True
+            message = f" GAME OVER ! The word was '{target}'."
+            new_game = Game(
+                user_id=session["user_id"],
+                word=target,
+                attempts=session["attempts"],
+                won=False,
+                played_at=datetime.utcnow()
+            )
+            db.session.add(new_game)
+            db.session.commit()
+            session.pop("target_word", None)
+            session.pop("attempts", None)
+            session.pop("history", None)
+
+    return render_template(
+        "play.html",
+        history=history,
+        game_over=game_over,
+        message=message
+    )
+
+
+# Add Sample Words
+@main.route("/add-words")
+def add_words():
+    sample_words = [
+        "APPLE", "BRAIN", "CHAIR", "DELTA", "EAGLE",
+        "FAITH", "GIANT", "HOUSE", "INPUT", "JOKER",
+        "KNIFE", "LIGHT", "MONEY", "NURSE", "OCEAN",
+        "PLANT", "QUEEN", "ROBOT", "SUGAR", "TIGER"
+    ]
+
+    for w in sample_words:
+        if not Word.query.filter_by(word=w).first():
+            new_word = Word(word=w)
+            db.session.add(new_word)
+
+    db.session.commit()
+    return "20 words added successfully!"
+
+
+@main.route("/leaderboard")
+def leaderboard():
+    if "user_id" not in session:
+        flash("Please log in to view the leaderboard.", "warning")
+        return redirect(url_for("main.login"))
+
+    # Leaderboard Data
+    stats = (
+        db.session.query(
+            User.username,
+            func.count(Game.id).label("games_played"),
+            func.sum(case((Game.won == True, 1), else_=0)).label("wins"),
+            func.avg(Game.attempts).label("avg_attempts")
+        )
+        .join(Game, Game.user_id == User.id)
+        .group_by(User.id)
+        .order_by(func.sum(case((Game.won == True, 1), else_=0)).desc())
+        .all()
+    )
+
+    # Personal Stats
+    user_games = Game.query.filter_by(user_id=session["user_id"]).all()
+    total_games = len(user_games)
+    wins = sum(1 for g in user_games if g.won)
+    losses = total_games - wins
+    win_rate = round((wins / total_games) * 100, 2) if total_games > 0 else 0
+
+    return render_template(
+        "leaderboard.html",
+        leaderboard=stats,
+        total_games=total_games,
+        wins=wins,
+        losses=losses,
+        win_rate=win_rate
+    )

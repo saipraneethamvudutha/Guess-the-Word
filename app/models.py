@@ -1,20 +1,23 @@
-from . import db, bcrypt
+from . import db
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)  # added for login
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     guesses = db.relationship('Guess', backref='user', lazy=True, foreign_keys="Guess.user_id")
+    games = db.relationship('Game', backref='user', lazy=True)
 
-    def set_password(self, raw_password):
-        self.password = bcrypt.generate_password_hash(raw_password).decode('utf-8')
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
 
-    def check_password(self, raw_password):
-        return bcrypt.check_password_hash(self.password, raw_password)
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
 
 
 class Word(db.Model):
@@ -31,3 +34,12 @@ class Guess(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     word_id = db.Column(db.Integer, db.ForeignKey('word.id'), nullable=False)
+
+
+class Game(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    word = db.Column(db.String(5), nullable=False)
+    attempts = db.Column(db.Integer, nullable=False)
+    won = db.Column(db.Boolean, default=False)
+    played_at = db.Column(db.DateTime, default=datetime.utcnow)

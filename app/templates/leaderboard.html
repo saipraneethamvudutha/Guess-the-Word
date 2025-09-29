@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <!-- Leaderboard -->
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h3 class="card-title text-center">🏆 Leaderboard</h3>
+                <table class="table table-striped text-center mt-3">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Games Played</th>
+                            <th>Wins</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in leaderboard %}
+                        <tr {% if row.username==session['username'] %} class="table-success" {% endif %}>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ row.username }}</td>
+                            <td>{{ row.games_played }}</td>
+                            <td>{{ row.wins }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">No players yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Scoreboard -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h4 class="card-title"> Your Scoreboard</h4>
+                <p><strong>Total Games:</strong> {{ total_games }}</p>
+                <p><strong>Wins:</strong> {{ wins }}</p>
+                <p><strong>Losses:</strong> {{ losses }}</p>
+                <p><strong>Win Rate:</strong> {{ win_rate }}%</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
