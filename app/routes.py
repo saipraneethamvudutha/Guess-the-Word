@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app import db
-from app.models import User, Word, Guess, Game
+from app.models import User, Word, Game
 from datetime import datetime
 import random
 import re
@@ -110,61 +110,57 @@ def play():
         session["attempts"] = 0
         session["history"] = []
 
-    history = session["history"]
-    target = session["target_word"]
+    history = session.get("history", [])
+    target = session.get("target_word")
     game_over = False
     message = None
 
-    if request.method == "POST" and not game_over:
-        guess = request.form.get("guess", "").upper().strip()
+    if request.method == "POST":
+        guess = request.form.get("guess", "").strip().upper()
 
-        if len(guess) != 5 or not guess.isalpha():
-            flash("Invalid guess. Please enter a 5-letter word.", "danger")
+        if not guess.isalpha() or len(guess) != 5:
+            flash("Invalid input. Please enter a single 5-letter word.", "danger")
+            return redirect(url_for("main.play"))
+            
+        previous_guesses = ["".join([letter['letter'] for letter in attempt]) for attempt in history]
+        if guess in previous_guesses:
+            flash(f"You've already guessed the word '{guess}'. Try a different one!", "warning")
             return redirect(url_for("main.play"))
 
         session["attempts"] += 1
 
         feedback = []
+        target_counts = {char: target.count(char) for char in set(target)}
+
         for i in range(5):
             if guess[i] == target[i]:
                 feedback.append({"letter": guess[i], "color": "green"})
-            elif guess[i] in target:
-                feedback.append({"letter": guess[i], "color": "orange"})
+                target_counts[guess[i]] -= 1
             else:
                 feedback.append({"letter": guess[i], "color": "grey"})
 
+        for i in range(5):
+            if feedback[i]['color'] != 'green':
+                if guess[i] in target and target_counts.get(guess[i], 0) > 0:
+                    feedback[i]['color'] = 'orange'
+                    target_counts[guess[i]] -= 1
+        
         history.append(feedback)
         session["history"] = history
 
-        # Win Condition
         if guess == target:
             game_over = True
-            message = f" CONGRATULATIONS ! You guessed the word '{target}' in {session['attempts']} attempts!"
-            new_game = Game(
-                user_id=session["user_id"],
-                word=target,
-                attempts=session["attempts"],
-                won=True,
-                played_at=datetime.utcnow()
-            )
+            message = f"CONGRATULATIONS! You guessed '{target}' in {session['attempts']} attempts!"
+            new_game = Game(user_id=session["user_id"], word=target, attempts=session["attempts"], won=True)
             db.session.add(new_game)
-            db.session.commit()
-            session.pop("target_word", None)
-            session.pop("attempts", None)
-            session.pop("history", None)
-
-        # Lose Condition
+        
         elif session["attempts"] >= 6:
             game_over = True
-            message = f" GAME OVER ! The word was '{target}'."
-            new_game = Game(
-                user_id=session["user_id"],
-                word=target,
-                attempts=session["attempts"],
-                won=False,
-                played_at=datetime.utcnow()
-            )
+            message = f"GAME OVER! The word was '{target}'."
+            new_game = Game(user_id=session["user_id"], word=target, attempts=session["attempts"], won=False)
             db.session.add(new_game)
+        
+        if game_over:
             db.session.commit()
             session.pop("target_word", None)
             session.pop("attempts", None)
@@ -174,7 +170,8 @@ def play():
         "play.html",
         history=history,
         game_over=game_over,
-        message=message
+        message=message,
+        attempts=session.get('attempts', 0)
     )
 
 
@@ -194,9 +191,11 @@ def add_words():
             db.session.add(new_word)
 
     db.session.commit()
-    return "20 words added successfully!"
+    flash(f"{len(sample_words)} words added to the database!", "success")
+    return redirect(url_for("main.home"))
 
 
+# Leaderboard Route
 @main.route("/leaderboard")
 def leaderboard():
     if "user_id" not in session:
@@ -208,12 +207,14 @@ def leaderboard():
         db.session.query(
             User.username,
             func.count(Game.id).label("games_played"),
-            func.sum(case((Game.won == True, 1), else_=0)).label("wins"),
-            func.avg(Game.attempts).label("avg_attempts")
+            func.sum(case((Game.won == True, 1), else_=0)).label("wins")
         )
         .join(Game, Game.user_id == User.id)
         .group_by(User.id)
-        .order_by(func.sum(case((Game.won == True, 1), else_=0)).desc())
+        .order_by(
+            func.sum(case((Game.won == True, 1), else_=0)).desc(),
+            func.count(Game.id).asc()
+        )
         .all()
     )
 

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row">
-    <!-- Leaderboard -->
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h3 class="card-title text-center">🏆 Leaderboard</h3>
-                <table class="table table-striped text-center mt-3">
+<div class="container">
+    <div class="row justify-content-center">
+
+        <div class="col-lg-7 mb-4 mb-lg-0">
+            <div class="glass-card p-4 leaderboard-card">
+                <h3 class="text-center mb-4"> Leaderboard</h3>
+                <table class="table table-borderless leaderboard-table">
                     <thead>
                         <tr>
                             <th>Rank</th>
@@ -17,7 +17,7 @@
                     </thead>
                     <tbody>
                         {% for row in leaderboard %}
-                        <tr {% if row.username==session['username'] %} class="table-success" {% endif %}>
+                        <tr class="{% if row.username==session['username'] %}current-user{% endif %}">
                             <td>{{ loop.index }}</td>
                             <td>{{ row.username }}</td>
                             <td>{{ row.games_played }}</td>
@@ -25,26 +25,37 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4">No players yet.</td>
+                            <td colspan="4" class="text-center py-5">No players have completed a game yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- Personal Scoreboard -->
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-body text-center">
-                <h4 class="card-title"> Your Scoreboard</h4>
-                <p><strong>Total Games:</strong> {{ total_games }}</p>
-                <p><strong>Wins:</strong> {{ wins }}</p>
-                <p><strong>Losses:</strong> {{ losses }}</p>
-                <p><strong>Win Rate:</strong> {{ win_rate }}%</p>
+        <div class="col-lg-4">
+            <div class="glass-card p-4 text-center scoreboard-card">
+                <h4>Your Scoreboard</h4>
+                <hr class="scoreboard-hr">
+                <div class="stat-item">
+                    <span class="stat-label">Total Games:</span>
+                    <span class="stat-value">{{ total_games }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Wins:</span>
+                    <span class="stat-value">{{ wins }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Losses:</span>
+                    <span class="stat-value">{{ losses }}</span>
+                </div>
+                <div class="stat-item" style="border-bottom: none;">
+                    <span class="stat-label">Win Rate:</span>
+                    <span class="stat-value">{{ win_rate }}%</span>
+                </div>
             </div>
         </div>
+
     </div>
 </div>
 {% endblock %}

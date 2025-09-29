@@ -1,17 +1,20 @@
 {% extends "base.html" %}
-
 {% block content %}
-<h1 class="text-center">Welcome to Guess The Word !</h1>
-<p class="text-center">A simple Flask game with login, registration, and word guessing.</p>
-
-{% if session.get('user_id') %}
-<div class="text-center">
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="glass-card p-5 text-center">
+                <h1 class="display-4">Welcome to Guess The Word!</h1>
+                <p class="lead">A modern word guessing game built with Flask.</p>
+                <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+                {% if session.get('user_id') %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-light btn-lg">Go to Dashboard</a>
+                {% else %}
+                <a href="{{ url_for('main.login') }}" class="btn btn-success">Login</a>
+                <a href="{{ url_for('main.register') }}" class="btn btn-info ms-2">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
-{% else %}
-<div class="text-center">
-    <a href="{{ url_for('main.login') }}" class="btn btn-success">Login</a>
-    <a href="{{ url_for('main.register') }}" class="btn btn-info">Register</a>
-</div>
-{% endif %}
 {% endblock %}

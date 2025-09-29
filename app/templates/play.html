@@ -1,71 +1,53 @@
 {% extends "base.html" %}
-
 {% block content %}
-<style>
-    .letter-box {
-        display: inline-block;
-        border: 2px solid #ccc;
-        width: 60px;
-        height: 60px;
-        text-align: center;
-        line-height: 55px;
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin: 4px;
-        text-transform: uppercase;
-    }
+<div class="container-fluid">
+    <div class="row align-items-center justify-content-center" style="min-height: 70vh;">
 
-    .game-row {
-        display: flex;
-        justify-content: center;
-    }
+        <div class="col-lg-6">
+            <div id="game-board" class="mb-4">
+                {% for guess_row in history %}
+                <div class="game-row">
+                    {% for letter_info in guess_row %}
+                    <div class="letter-box {{ letter_info.color }}">{{ letter_info.letter }}</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
 
-    .green {
-        background-color: #6aaa64;
-        color: white;
-        border-color: #6aaa64;
-    }
-
-    .orange {
-        background-color: #c9b458;
-        color: white;
-        border-color: #c9b458;
-    }
-
-    .grey {
-        background-color: #787c7e;
-        color: white;
-        border-color: #787c7e;
-    }
-</style>
-
-<div class="text-center">
-    <h2 class="mb-4">Guess the 5-Letter Word!</h2>
-
-    <div id="game-board" class="mb-4">
-        {% for guess in history %}
-        <div class="game-row">
-            {% for letter_info in guess %}
-            <div class="letter-box {{ letter_info.color }}">{{ letter_info.letter }}</div>
-            {% endfor %}
+                {% for i in range(6 - history|length) %}
+                <div class="game-row">
+                    <div class="letter-box"></div>
+                    <div class="letter-box"></div>
+                    <div class="letter-box"></div>
+                    <div class="letter-box"></div>
+                    <div class="letter-box"></div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        {% endfor %}
-    </div>
 
-    {% if message %}
-    <div class="alert alert-info mt-4">
-        <h4>{{ message }}</h4>
-        <a href="{{ url_for('main.play') }}" class="btn btn-primary mt-2">Play Again</a>
-    </div>
-    {% endif %}
+        <div class="col-lg-4 text-center">
+            <div class="game-controls glass-card p-5">
+                <h2 class="mb-3">Guess the Word!</h2>
 
-    {% if not game_over %}
-    <p>You have {{ 5 - history|length }} guesses remaining.</p>
-    <form method="POST" class="d-flex justify-content-center">
-        <input type="text" name="guess" class="form-control w-25" maxlength="5" minlength="5" pattern="[A-Za-z]{5}"
-            title="Enter a 5-letter word" required autofocus>
-        <button type="submit" class="btn btn-success ms-2">Guess</button>
-    </form>
-    {% endif %}
+                {% if not game_over %}
+                <p class="lead mb-4">You have {{ 6 - attempts }} guesses remaining.</p>
+                <form method="POST" class="game-form">
+                    <input type="text" name="guess" class="form-control form-control-lg text-center mb-3"
+                        style="text-transform: uppercase;" maxlength="5" minlength="5" pattern="[A-Za-z]{5}"
+                        title="Enter a 5-letter word" required autofocus>
+                    <button type="submit" class="btn btn-glass-primary w-100">Guess</button>
+                </form>
+                {% endif %}
+
+                {% if message %}
+                <div class="mt-4">
+                    <h4>{{ message }}</h4>
+                    <a href="{{ url_for('main.play') }}" class="btn btn-light mt-2">Play Again</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
 </div>
 {% endblock %}
