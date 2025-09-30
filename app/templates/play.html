@@ -13,7 +13,7 @@
                 </div>
                 {% endfor %}
 
-                {% for i in range(6 - history|length) %}
+                {% for i in range(5 - history|length) %}
                 <div class="game-row">
                     <div class="letter-box"></div>
                     <div class="letter-box"></div>
@@ -30,7 +30,7 @@
                 <h2 class="mb-3">Guess the Word!</h2>
 
                 {% if not game_over %}
-                <p class="lead mb-4">You have {{ 6 - attempts }} guesses remaining.</p>
+                <p class="lead mb-4">You have {{ 5 - attempts }} guesses remaining.</p>
                 <form method="POST" class="game-form">
                     <input type="text" name="guess" class="form-control form-control-lg text-center mb-3"
                         style="text-transform: uppercase;" maxlength="5" minlength="5" pattern="[A-Za-z]{5}"

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+    <div class="glass-card p-4 mb-4">
+        <h2 class="text-center">Admin Dashboard</h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="glass-card p-3 text-center">
+                <h4>Total Users</h4>
+                <p class="display-4">{{ total_users }}</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="glass-card p-3 text-center">
+                <h4>Games Played Today</h4>
+                <p class="display-4">{{ games_today }}</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="glass-card p-3 text-center">
+                <h4>Wins Today</h4>
+                <p class="display-4">{{ wins_today }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="glass-card p-4">
+                <h4 class="mb-3">Recent Activity (Last 7 Days)</h4>
+                <div id="chartContainer" style="position: relative; min-height: 300px;">
+                    <div class="chart-loader"></div>
+                    <canvas id="gamesChart" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>User Management</h4>
+                    <form method="POST" class="d-flex">
+                        <input type="text" name="username" class="form-control" placeholder="Search by username..."
+                            style="width: 250px;">
+                        <button type="submit" class="btn btn-glass-primary ms-2">Search</button>
+                    </form>
+                </div>
+
+                <table class="table leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Registered On</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in all_users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if user.is_admin %}
+                                <span class="badge admin-badge">Admin</span>
+                                {% else %}
+                                <span class="badge user-badge">User</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.id == session['user_id'] %}
+                                <button class="btn btn-secondary btn-sm" disabled>Self</button>
+                                {% else %}
+                                <form action="{{ url_for('main.toggle_admin', user_id=user.id) }}" method="POST">
+                                    {% if user.is_admin %}
+                                    <button type="submit" class="btn btn-warning btn-sm">Revoke Admin</button>
+                                    {% else %}
+                                    <button type="submit" class="btn btn-success btn-sm">Make Admin</button>
+                                    {% endif %}
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartCanvas = document.getElementById('gamesChart');
+        const loader = document.querySelector('.chart-loader');
+
+        fetch('/admin/chart-data')
+            .then(response => response.json())
+            .then(chartData => {
+                loader.style.display = 'none';
+                chartCanvas.style.display = 'block';
+                const ctx = chartCanvas.getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
+                gradient.addColorStop(1, 'rgba(168, 85, 247, 0)');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: 'Games Played',
+                            data: chartData.data,
+                            borderColor: 'rgba(168, 85, 247, 1)',
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: 'rgba(168, 85, 247, 1)',
+                            pointHoverRadius: 7,
+                            pointHoverBackgroundColor: 'rgba(168, 85, 247, 1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: 'rgba(255, 255, 255, 0.7)', precision: 0 },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching chart data:', error);
+                loader.innerText = 'Could not load chart data.';
+            });
+    });
+</script>
+{% endblock %}

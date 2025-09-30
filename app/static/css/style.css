@@ -24,7 +24,8 @@ body::before {
     z-index: 0;
 }
 
-.container {
+.container,
+.container-fluid {
     position: relative;
     z-index: 1;
 }
@@ -323,13 +324,16 @@ h6 {
     font-weight: 600;
 }
 
-.leaderboard-table {
-    color: #fff;
+.leaderboard-table,
+.leaderboard-table th,
+.leaderboard-table td {
+    background-color: transparent !important;
+    color: #fff !important;
 }
 
 .leaderboard-table thead th {
-    color: rgba(255, 255, 255, 0.6);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -338,7 +342,7 @@ h6 {
 .leaderboard-table tbody td {
     padding: 1rem 0.5rem;
     vertical-align: middle;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .leaderboard-table tbody tr {
@@ -346,16 +350,16 @@ h6 {
 }
 
 .leaderboard-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .leaderboard-table tbody tr.current-user {
-    background: linear-gradient(90deg, rgba(168, 85, 247, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+    background: linear-gradient(90deg, rgba(168, 85, 247, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%) !important;
     font-weight: 600;
 }
 
 .scoreboard-hr {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
     margin: 1.5rem 0;
 }
 
@@ -365,14 +369,50 @@ h6 {
     align-items: center;
     padding: 0.8rem 0;
     font-size: 1.1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-label {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .stat-value {
     font-weight: 600;
     font-size: 1.2rem;
+}
+
+
+#gamesChart {
+    min-height: 300px;
+}
+
+.chart-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #a78bfa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+.admin-badge {
+    background-color: rgba(236, 72, 153, 0.2);
+    border: 1px solid rgba(236, 72, 153, 0.4);
+    color: #f9a8d4;
+}
+
+.user-badge {
+    background-color: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #93c5fd;
 }
