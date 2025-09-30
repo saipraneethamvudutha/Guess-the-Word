@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container-fluid">
+    {% if not limit_reached %}
     <div class="row align-items-center justify-content-center" style="min-height: 70vh;">
 
         <div class="col-lg-6">
@@ -13,7 +14,10 @@
                 </div>
                 {% endfor %}
 
-                {% for i in range(5 - history|length) %}
+                {% set remaining_rows = 5 - history|length %}
+                {% if game_over %}{% set remaining_rows = 0 %}{% endif %}
+                {% if remaining_rows > 0 %}
+                {% for i in range(remaining_rows) %}
                 <div class="game-row">
                     <div class="letter-box"></div>
                     <div class="letter-box"></div>
@@ -22,6 +26,7 @@
                     <div class="letter-box"></div>
                 </div>
                 {% endfor %}
+                {% endif %}
             </div>
         </div>
 
@@ -37,17 +42,88 @@
                         title="Enter a 5-letter word" required autofocus>
                     <button type="submit" class="btn btn-glass-primary w-100">Guess</button>
                 </form>
-                {% endif %}
-
-                {% if message %}
-                <div class="mt-4">
-                    <h4>{{ message }}</h4>
-                    <a href="{{ url_for('main.play') }}" class="btn btn-light mt-2">Play Again</a>
-                </div>
+                {% else %}
+                <a href="{{ url_for('main.play') }}" class="btn btn-light mt-2">Play Again</a>
                 {% endif %}
             </div>
         </div>
+    </div>
+    {% endif %}
+</div>
 
+<div class="modal fade modal-success" id="winModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="winModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="winModalLabel"> CONGRATULATIONS!!!</h5>
+            </div>
+            <div class="modal-body text-center">
+                <p class="lead">{{ message }}</p>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('main.leaderboard') }}" class="btn btn-outline-light">View Leaderboard</a>
+                <a href="{{ url_for('main.play') }}" class="btn btn-success-glass">OK (Play Again)</a>
+            </div>
+        </div>
     </div>
 </div>
+
+<div class="modal fade modal-lose" id="loseModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="loseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loseModalLabel">GAME OVER</h5>
+            </div>
+            <div class="modal-body text-center">
+                <p class="lead">{{ message }}</p>
+                <p>The word was: <strong>{{ secret_word }}</strong></p>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('main.play') }}" class="btn btn-light w-100">OK</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade modal-limit" id="dailyLimitModal" data-bs-backdrop="static" data-bs-keyboard="false"
+    tabindex="-1" aria-labelledby="dailyLimitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dailyLimitModalLabel">Daily Limit Reached</h5>
+            </div>
+            <div class="modal-body text-center">
+                <p class="lead">You have already played your 3 games for today. Please come back tomorrow!</p>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-light">Dashboard</a>
+                <a href="{{ url_for('main.leaderboard') }}" class="btn btn-warning-glass">Leaderboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const isWin = '{{ is_win }}' === 'True';
+        const isGameOver = '{{ game_over }}' === 'True';
+        const isLimitReached = '{{ limit_reached }}' === 'True';
+
+        if (isLimitReached) {
+            const limitModal = new bootstrap.Modal(document.getElementById('dailyLimitModal'));
+            limitModal.show();
+        } else if (isWin) {
+            const winModal = new bootstrap.Modal(document.getElementById('winModal'));
+            winModal.show();
+            confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } });
+        } else if (isGameOver) {
+            const loseModal = new bootstrap.Modal(document.getElementById('loseModal'));
+            loseModal.show();
+        }
+    });
+</script>
 {% endblock %}

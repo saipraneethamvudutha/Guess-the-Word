@@ -11,8 +11,8 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
-    guesses = db.relationship('Guess', backref='user', lazy=True)
     games = db.relationship('Game', backref='user', lazy=True)
+    guesses = db.relationship('Guess', backref='user', lazy=True)
 
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -24,16 +24,16 @@ class User(db.Model):
 class Word(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     word = db.Column(db.String(5), unique=True, nullable=False)
-    
+
     guesses = db.relationship('Guess', backref='word', lazy=True)
 
 
 class Guess(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     guess_word = db.Column(db.String(5), nullable=False)
-    time_stamp = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     word_id = db.Column(db.Integer, db.ForeignKey('word.id'), nullable=False)
+    played_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Game(db.Model):

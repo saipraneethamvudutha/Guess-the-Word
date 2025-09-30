@@ -261,6 +261,7 @@ h6 {
     box-shadow: 0 8px 20px rgba(168, 85, 247, 0.3);
 }
 
+/* Game Page Styles */
 .game-row {
     display: flex;
     justify-content: center;
@@ -313,17 +314,7 @@ h6 {
     max-width: 300px;
 }
 
-.leaderboard-card,
-.scoreboard-card {
-    color: #ffffff;
-}
-
-.leaderboard-card h3,
-.scoreboard-card h4 {
-    color: #ffffff;
-    font-weight: 600;
-}
-
+/* Leaderboard and Scoreboard Styles */
 .leaderboard-table,
 .leaderboard-table th,
 .leaderboard-table td {
@@ -343,10 +334,6 @@ h6 {
     padding: 1rem 0.5rem;
     vertical-align: middle;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.leaderboard-table tbody tr {
-    transition: background-color 0.2s ease-in-out;
 }
 
 .leaderboard-table tbody tr:hover {
@@ -381,7 +368,7 @@ h6 {
     font-size: 1.2rem;
 }
 
-
+/* Loader for Async Chart */
 #gamesChart {
     min-height: 300px;
 }
@@ -405,6 +392,7 @@ h6 {
     }
 }
 
+/* Admin Dashboard Badges */
 .admin-badge {
     background-color: rgba(236, 72, 153, 0.2);
     border: 1px solid rgba(236, 72, 153, 0.4);
@@ -415,4 +403,39 @@ h6 {
     background-color: rgba(59, 130, 246, 0.2);
     border: 1px solid rgba(59, 130, 246, 0.4);
     color: #93c5fd;
+}
+
+/* Styles for Admin Action Buttons  */
+.btn-make-admin,
+.btn-revoke-admin {
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-make-admin {
+    background-color: rgba(16, 185, 129, 0.3);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.btn-make-admin:hover {
+    background-color: rgba(16, 185, 129, 0.5);
+}
+
+.btn-revoke-admin {
+    background-color: rgba(251, 191, 36, 0.3);
+    border: 1px solid rgba(251, 191, 36, 0.5);
+}
+
+.btn-revoke-admin:hover {
+    background-color: rgba(251, 191, 36, 0.5);
+}
+
+.word-list-container {
+    max-height: 400px;
+    overflow-y: auto;
 }

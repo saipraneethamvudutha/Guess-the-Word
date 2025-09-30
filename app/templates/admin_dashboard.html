@@ -5,23 +5,36 @@
         <h2 class="text-center">Admin Dashboard</h2>
     </div>
 
+    {% if searched_user %}
+    <div class="alert alert-info glass-card d-flex justify-content-between align-items-center">
+        <span>Showing stats for: <strong>{{ searched_user.username }}</strong></span>
+        <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-sm btn-outline-light">Clear Filter</a>
+    </div>
+    {% endif %}
+
     <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="glass-card p-3 text-center">
-                <h4>Total Users</h4>
-                <p class="display-4">{{ total_users }}</p>
+        <div class="col-md-3 mb-4">
+            <div class="glass-card p-3 text-center h-100">
+                <h4>Active Users Today</h4>
+                <p class="display-4">{{ users_played_today }}</p>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div class="glass-card p-3 text-center">
+        <div class="col-md-3 mb-4">
+            <div class="glass-card p-3 text-center h-100">
                 <h4>Games Played Today</h4>
                 <p class="display-4">{{ games_today }}</p>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div class="glass-card p-3 text-center">
+        <div class="col-md-3 mb-4">
+            <div class="glass-card p-3 text-center h-100">
                 <h4>Wins Today</h4>
                 <p class="display-4">{{ wins_today }}</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="glass-card p-3 text-center h-100">
+                <h4>Total Users</h4>
+                <p class="display-4">{{ total_users }}</p>
             </div>
         </div>
     </div>
@@ -31,73 +44,141 @@
             <div class="glass-card p-4">
                 <h4 class="mb-3">Recent Activity (Last 7 Days)</h4>
                 <div id="chartContainer" style="position: relative; min-height: 300px;">
-                    <div class="chart-loader"></div>
-                    <canvas id="gamesChart" style="display: none;"></canvas>
+                    <div class="chart-loader"></div><canvas id="gamesChart" style="display: none;"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row">
-        <div class="col-12">
-            <div class="glass-card p-4">
+        <div class="col-lg-7 mb-4">
+            <div class="glass-card p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4>User Management</h4>
-                    <form method="POST" class="d-flex">
-                        <input type="text" name="username" class="form-control" placeholder="Search by username..."
-                            style="width: 250px;">
-                        <button type="submit" class="btn btn-glass-primary ms-2">Search</button>
+                    <form method="GET" action="{{ url_for('main.admin_dashboard') }}" class="d-flex">
+                        <input type="text" name="search_user" class="form-control"
+                            placeholder="Filter all stats by user..." style="width: 250px;"
+                            value="{{ searched_user.username if searched_user else '' }}">
+                        <button type="submit" class="btn btn-glass-primary ms-2">Filter</button>
                     </form>
                 </div>
-
-                <table class="table leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Registered On</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in all_users %}
-                        <tr>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
-                            <td>
-                                {% if user.is_admin %}
-                                <span class="badge admin-badge">Admin</span>
-                                {% else %}
-                                <span class="badge user-badge">User</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if user.id == session['user_id'] %}
-                                <button class="btn btn-secondary btn-sm" disabled>Self</button>
-                                {% else %}
-                                <form action="{{ url_for('main.toggle_admin', user_id=user.id) }}" method="POST">
-                                    {% if user.is_admin %}
-                                    <button type="submit" class="btn btn-warning btn-sm">Revoke Admin</button>
-                                    {% else %}
-                                    <button type="submit" class="btn btn-success btn-sm">Make Admin</button>
+                <div class="table-responsive">
+                    <table class="table leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in all_users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{% if user.is_admin %}<span class="badge admin-badge">Admin</span>{% else %}<span
+                                        class="badge user-badge">User</span>{% endif %}</td>
+                                <td>
+                                    {% if user.id != session['user_id'] %}
+                                    <form action="{{ url_for('main.toggle_admin', user_id=user.id) }}" method="POST"
+                                        class="d-inline">
+                                        {% if user.is_admin %}<button type="submit"
+                                            class="btn btn-revoke-admin btn-sm">Revoke</button>{% else %}<button
+                                            type="submit" class="btn btn-make-admin btn-sm">Make Admin</button>{% endif
+                                        %}
+                                    </form>
                                     {% endif %}
-                                </form>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center">No users found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">No users found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5 mb-4">
+            <div class="glass-card p-4 h-100">
+                <h4 class="mb-3">Word Management</h4>
+                <form method="POST" action="{{ url_for('main.add_word') }}" class="d-flex mb-3">
+                    <input type="text" name="word" class="form-control" placeholder="New 5-letter word..." maxlength="5"
+                        pattern="[A-Za-z]{5}" required>
+                    <button type="submit" class="btn btn-glass-primary ms-2">Add</button>
+                </form>
+                <div class="word-list-container">
+                    <table class="table leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Word</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for word in all_words %}
+                            <tr>
+                                <td>{{ word.word }}</td>
+                                <td>
+                                    <form action="{{ url_for('main.delete_word', word_id=word.id) }}" method="POST">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Are you sure?')">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2">No words in database.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="glass-card p-4">
+                <h4 class="mb-3">Today's Game Activity {% if searched_user %}(for {{ searched_user.username }}){% endif
+                    %}</h4>
+                <div class="table-responsive">
+                    <table class="table leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Word</th>
+                                <th>Attempts</th>
+                                <th>Result</th>
+                                <th>Timestamp (UTC)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for game in todays_games %}
+                            <tr>
+                                <td>{{ game.id }}</td>
+                                <td>{{ game.user.username }}</td>
+                                <td>{{ game.word }}</td>
+                                <td>{{ game.attempts }}</td>
+                                <td>{% if game.won %}Win{% else %}Loss{% endif %}</td>
+                                <td>{{ game.played_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">No games played today.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -105,8 +186,13 @@
     document.addEventListener('DOMContentLoaded', function () {
         const chartCanvas = document.getElementById('gamesChart');
         const loader = document.querySelector('.chart-loader');
+        const userId = '{{ searched_user.id if searched_user else "" }}';
 
-        fetch('/admin/chart-data')
+        let apiUrl = '/admin/chart-data';
+        if (userId) {
+            apiUrl += `?user_id=${userId}`;
+        }
+        fetch(apiUrl)
             .then(response => response.json())
             .then(chartData => {
                 loader.style.display = 'none';
@@ -116,36 +202,18 @@
                 gradient.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
                 gradient.addColorStop(1, 'rgba(168, 85, 247, 0)');
                 new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: chartData.labels,
-                        datasets: [{
-                            label: 'Games Played',
-                            data: chartData.data,
-                            borderColor: 'rgba(168, 85, 247, 1)',
-                            backgroundColor: gradient,
-                            fill: true,
-                            tension: 0.4,
-                            pointBackgroundColor: '#fff',
-                            pointBorderColor: 'rgba(168, 85, 247, 1)',
-                            pointHoverRadius: 7,
-                            pointHoverBackgroundColor: 'rgba(168, 85, 247, 1)'
+                    type: 'line', data: {
+                        labels: chartData.labels, datasets: [{
+                            label: 'Games Played', data: chartData.data, borderColor: 'rgba(168, 85, 247, 1)',
+                            backgroundColor: gradient, fill: true, tension: 0.4, pointBackgroundColor: '#fff',
+                            pointBorderColor: 'rgba(168, 85, 247, 1)', pointHoverRadius: 7, pointHoverBackgroundColor: 'rgba(168, 85, 247, 1)'
                         }]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
                         scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: { color: 'rgba(255, 255, 255, 0.7)', precision: 0 },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                            },
-                            x: {
-                                ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                                grid: { display: false }
-                            }
+                            y: { beginAtZero: true, ticks: { color: 'rgba(255, 255, 255, 0.7)', precision: 0 }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                            x: { ticks: { color: 'rgba(255, 255, 255, 0.7)' }, grid: { display: false } }
                         }
                     }
                 });
